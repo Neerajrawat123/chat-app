@@ -1,0 +1,1 @@
+ALTER TABLE "messageStatus" ALTER COLUMN "seenAt" SET DEFAULT null;

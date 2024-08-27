@@ -1,67 +1,68 @@
 import { useState, useEffect, useContext } from "react";
 import MessageBox from "../components/messagesBox/index.jsx";
 import Sidebar from "../components/sidebar";
+import { ImArrowLeft } from "react-icons/im";
 import { io } from "socket.io-client";
-import FriendContext, { friendContext } from "../context/friend.jsx";
-import { userContext } from "../context/userContext.jsx";
-import axios from "axios";
-export const socket = io("http://localhost:4000");
+import { useUserStore } from "../store/userStore.js";
+import { useChatStore } from "../store/chatStore.js";
+
+export const socket = io("http://localhost:4000",{
+  autoConnect: false
+});
+
+
+
 
 export default function Dashboard() {
-  const { user } = useContext(userContext);
-  const [users, setUsers] = useState([]);
-  const [messages, setMessages] = useState([]);
+  
+  const user = useUserStore((state) => state.currentUser)
+  const { chatId, chatUsers, addChatUsers,   updateLastMessage  } = useChatStore()
+  if(user){
+    socket.connect()
+  }
+
+ 
+ 
+
+  
+  
+
+ 
 
   useEffect(() => {
     socket.on("connect", () => {
       console.log(socket.id);
     });
-    socket.emit("storeId", user._id);
+    socket.emit("storeId", user.id);
   }, []);
 
-  useEffect(() => {
-    axios(`/user/getUsers/${user._id}`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then((usedata) => {
-        setUsers(usedata.data);
-      });
-  }, []);
+ 
 
-  useEffect(() => {
-    axios(`/user/messages/${user._id}`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then((usedata) => {
-        setMessages(usedata.data);
-      });
-  }, []);
-
-  useEffect(() => {
-    socket.on("receive message", (data) => {
-      console.log(data);
-      setMessages((prev) => [...prev, data]);
-    });
-
-    return () => {
-      socket.off("receive message");
-    };
-  }, []);
-
+ 
   return (
-    <FriendContext>
-      <div className="flex w-full h-screen ">
-        <Sidebar users={users} messages={messages} />
-        <MessageBox messages={messages} />
+      <div className="w-full h-screen  bg-black  px-24 py-4 overflow-hidden">
+        
+        <div className="flex w-full bg-white">
+
+        <Sidebar />
+        { chatId ? (
+
+          <MessageBox />
+        ):
+        (
+          <div className="w-full h-screen ">
+            <div className="flex h-full justify-center items-center gap-6">
+            <ImArrowLeft size={60} color="rgb(249 115 22)"/>
+              <h2 className="bg-orange-500 text-white px-8 py-4 rounded-lg text-3xl font-bold">
+
+            Click user to see chat
+              </h2>
+
+            </div>
+          </div>
+        )
+        }
+        </div>
       </div>
-    </FriendContext>
   );
 }

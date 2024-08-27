@@ -1,11 +1,8 @@
-import mongoose from "mongoose";
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
+import { config } from "dotenv";
 
-export async function connectDatabase() {
-  try {
-    await mongoose.connect(process.env.MONGO_URL).then(() => {
-      console.log("database connected successfully");
-    });
-  } catch (error) {
-    console.log(error);
-  }
-}
+config({ path: ".env" }); // or .env.local
+
+const sql = neon(process.env.DB_URL);
+export const db = drizzle(sql);

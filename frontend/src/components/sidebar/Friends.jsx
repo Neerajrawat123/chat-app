@@ -1,40 +1,75 @@
-import { useContext } from "react";
-import { friendContext } from "../../context/friend";
+import axios from "axios";
+import { useChatStore } from "../../store/chatStore";
+import { useUserStore } from "../../store/userStore";
+import { useState } from "react";
 
-export default function Friends({ data, messages }) {
-  const { friend, setFriend } = useContext(friendContext);
+export default function Friends({data}) {
+  const {chatId, changeChat, setConId, conId} = useChatStore()
+const {userId, name, email,lastMessage, unseenMessages , conversationId} = data;
+const { currentUser} = useUserStore()
+const [unseenMsgs, setUnseenMsgs] = useState(unseenMessages)
 
-  const msgs = messages.filter(
-    (msg) => msg.reciever === data._id || msg.sender === data._id,
-  );
-  const lastMessage = msgs.length > 0 ? msgs[msgs?.length - 1].content : "";
 
-  const unreadMsgs = msgs.filter(
-    (message) => !messages?.readBy?.includes(user._id),
-  );
+const handleClick = () => {
+  changeChat(userId, name)
+    setConId(conversationId)
+
+  
+  
+  axios.get(`/user/getMessages/${chatId}/${currentUser.id}`)
+  .then((response) => {
+    if(response.data.statusCode === 200){
+      setUnseenMsgs(0)
+    
+     
+
+
+    }
+  })
+}
+
+
+  
   return (
-    <button onClick={() => setFriend(data)} className="w-full">
+    <button onClick={handleClick}  className="w-full ">
       <div
-        className="flex gap-2 h-16 px-1 w-full items-center hover:bg-blue-600"
-        style={{ backgroundColor: friend?.name === data?.name ? "blue" : "" }}
+        className="flex gap-4 h-16 px-5 py-12 border border-gray-100  w-full items-center hover:bg-[#f6f6f6]"
+        
       >
-        <div className="w-12 h-12 rounded-[50%] overflow-clip">
+        <div className="w-14 h-14 rounded-[50%] overflow-clip">
           <img src="images/friend.jpg" className="w-16" />
         </div>
-        <div className="flex flex-col border-b-2 border-blue-500 flex-1 items-start">
+        <div className="flex flex-col  flex-1  items-start">
           <div>
-            <span className="text-2xl font-bold">{data?.name}</span>
+            <span className="text-lg font-medium">{name}</span>
           </div>
-          <div className="flex justify-between w-full pr-4">
+          <div className="flex text-xl justify-between  w-full pr-4">
+            <div className="">
             <span
-              className={unreadMsgs.length > 0 ? "text-green-500 " : "text-lg"}
+            className="text-gray-500"
+              
             >
-              {lastMessage}
+              {unseenMessages > 0 ? name: currentUser.name}
+
+              
             </span>
-            <span className=" w-6 h-6 rounded-[50%] text-green-500 flex items-center justify-center bg-green-500">
-              {unreadMsgs.length}
+            <span>: </span>
+            <span className=" text-xl font-normal ">
+              {"   "}
+                {lastMessage}
             </span>
+
+            </div>
+            {
+              unseenMessages>0 && (
+                <div className="bg-green-600 h-7 w-7  text-white  rounded-[50%]">
+                  <span>{unseenMessages}</span>
+                </div>
+              )
+            }
+           
           </div>
+
         </div>
       </div>
     </button>

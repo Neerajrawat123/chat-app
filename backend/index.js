@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
-import { connectDatabase } from "./database/connect.js";
 import { connectWs } from "./utils/connectWs.js";
 import { createServer } from "http";
 import { app } from "./app.js";
+import { populate } from "./utils/populate.js";
 
 
 dotenv.config();
@@ -15,7 +15,7 @@ connectWs()
 
 export let userToSocket = new Map()
 
-connectDatabase()
+populate()
   .then(() =>
     httpServer.listen(port, () => {
       console.log(`port is running on ${port}`);

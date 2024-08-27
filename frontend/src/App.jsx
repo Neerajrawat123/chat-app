@@ -1,14 +1,14 @@
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { BrowserRouter,  Navigate,  Outlet,  Route, Routes } from "react-router-dom";
 import Login from "./pages/Login";
+
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import axios from "axios";
-import { useContext } from "react";
-import { userContext } from "./context/userContext";
+import { useUserStore } from "./store/userStore";
 
 function ProctedRoute() {
-  const {user} = useContext(userContext)
-  console.log(user)
+  const user = useUserStore((state) => state.currentUser)
+  
   return ( user !== null ? <Outlet /> : <Navigate to={'/login'} />)
 }
 
@@ -21,10 +21,10 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path='/dashboard' element ={<ProctedRoute />}>
+      <Route path='/' element ={<ProctedRoute />}>
 
-        <Route path="/dashboard" element={<Dashboard />} />
-        </Route>
+        <Route path="/" element={<Dashboard />} />
+        </Route> 
       </Routes>
     </BrowserRouter>
   );

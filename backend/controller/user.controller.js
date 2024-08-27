@@ -1,8 +1,19 @@
+import { and, arrayContains, asc, desc, eq, exists, ilike, inArray, like, ne, or, sql } from "drizzle-orm";
+import { db } from "../database/connect.js";
+import {
+  conversation,
+  conversationParticipants,
+  message,
+  messageStatus,
+  user,
+} from "../database/schema.js";
 import { Message } from "../modals/message.modal.js";
 import { User } from "../modals/user.modal.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { ApiError } from "../utils/customError.js";
 import bcryptjs from "bcryptjs";
+import { uid } from "uid";
+import { userToSocket } from "../utils/connectWs.js";
 
 const generateAccessAndRefereshTokens = async (userId) => {
   try {
@@ -17,7 +28,7 @@ const generateAccessAndRefereshTokens = async (userId) => {
   } catch (error) {
     throw new ApiError(
       500,
-      "Something went wrong while generating referesh and access token",
+      "Something went wrong while generating referesh and access token"
     );
   }
 };
@@ -26,29 +37,26 @@ async function register(req, res) {
   const { name, email, password } = req.body;
 
   const isAnyEmpty = [name, email, password].some(
-    (field) => field?.trim() === "",
+    (field) => field?.trim() === ""
   );
 
   if (isAnyEmpty) {
     res.status(301).json({ msg: "all field should be filled" });
   }
-  const existedUser = await User.findOne({
-    email,
-  });
+  const existedUser = await db.select().from(user).where(eq(user.email, email));
 
-  if (existedUser) {
+  if (existedUser.length > 0) {
     throw new ApiError(409, "User with email or username already exists");
   }
 
-  const user = await User.create({
-    email,
-    password,
-    name: name.toLowerCase(),
-  });
+  await db
+    .insert(user)
+    .values({ name: name, email: email, password: password });
 
-  const createdUser = await User.findById(user._id).select(
-    "-password -refreshToken",
-  );
+  const createdUser = await db
+    .select({ email: user.email, name: user.name, id: user.id })
+    .from(user)
+    .where(eq(user.email, email));
 
   if (!createdUser) {
     throw new ApiError(500, "Something went wrong while registering the user");
@@ -56,7 +64,7 @@ async function register(req, res) {
 
   return res
     .status(201)
-    .json(new ApiResponse(200, createdUser, "User registered Successfully"));
+    .json(new ApiResponse(200, "User registered Successfully", createdUser));
 }
 
 const loginUser = async (req, res) => {
@@ -66,70 +74,185 @@ const loginUser = async (req, res) => {
     throw new ApiError(400, "username or email is required");
   }
 
-  const user = await User.findOne({ email });
+  const userInfo = await db.select().from(user).where(eq(user.email, email));
 
-  if (!user) {
+  if (user.length === 0) {
     throw new ApiError(404, "User does not exist");
   }
 
-  const isPasswordValid = await bcryptjs.compare(password, user.password);
+  console.log(userInfo);
 
-  if (!isPasswordValid) {
+  // const isPasswordValid = await bcryptjs.compare(password, user.password);
+  if (userInfo[0].password !== password) {
     throw new ApiError(401, "Invalid user credentials");
   }
 
-  const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
-    user._id,
-  );
+  // if (!isPasswordValid) {
+  //   throw new ApiError(401, "Invalid user credentials");
+  // }
 
-  const loggedInUser = await User.findById(user._id).select(
-    "-password -refreshToken",
-  );
+  // const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
+  //   user._id,
+  // );
 
-  const options = {
-    httpOnly: true,
-    secure: true,
-  };
-  return res
-    .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
-    .json(
-      new ApiResponse(
-        200,
-        "User logged In Successfully",
-        {
-          user: loggedInUser,
-          accessToken,
-          refreshToken,
-        },
-      ),
-    );
+  const loggedInUser = await db
+    .select({ email: user.email, name: user.name, id: user.id })
+    .from(user)
+    .where(eq(user.email, email));
+
+  // const options = {
+  //   httpOnly: true,
+  //   secure: true,
+  // };
+  return res.status(200).json(
+    new ApiResponse(200, "User logged In Successfully", {
+      user: loggedInUser,
+    })
+  );
 };
 
-const getUsers = async (req, res) => {
-  const {id} = req.params
-  let users = await User.find({_id:{$ne:id}});
+const findUsers = async (req, res) => {
+  const { name, id } = req.params;
+  console.log(id);
+  let users = await db
+    .select()
+    .from(user)
+    .where(and(ne(user.id, id), ilike(user.name, `%${name}%`)));
   if (!users) {
     throw new ApiError(401, "cannot find users");
   }
   return res.status(200).json(new ApiResponse(200, "all users", users));
 };
 
-
 const getMessages = async (req, res) => {
-  const {id} = req.params
-  // let messages = await Message.find({$or: [{
-  //   reciever:id
-  // },{sender: id}]});
-  let messages = await Message.find({$or:[
-    {sender:id},
-    {reciever: id}
-  ]})
-  if (!messages) {
-    throw new ApiError(401, "cannot find users");
+  const { recieverId, senderId } = req.params;
+  console.log('get messages',senderId, recieverId)
+
+  try {
+    let messages = await db
+      .select()
+      .from(message)
+      .where(
+        or(
+          and(
+            eq(message.senderId, senderId),
+            eq(message.receiverId, recieverId)
+          ),
+          and(
+            eq(message.senderId, recieverId),
+            eq(message.receiverId, senderId)
+          )
+        )
+      )
+      .orderBy(desc(message.createdAt));
+    if (message.length <= 0) {
+      throw new ApiError(401, "cannot find messages");
+    }
+    return res.status(200).json(new ApiResponse(200, "messages", messages));
+  } catch (error) {
+    console.log("cant get the messages", error);
   }
-  return res.status(200).json(new ApiResponse(200, "all messages", messages));
 };
 
-export { register, loginUser, getUsers , getMessages};
+const getChats = async (req, res) => {
+  const { id } = req.params;
+  console.log(id)
+
+  try {
+    const chatIds = await db
+      .select({conversationId: conversationParticipants.conversationId } )
+      .from(conversationParticipants)
+      .where(eq(conversationParticipants.userId, id));
+
+      const converstionIdsArr = chatIds.map((ids) => ids.conversationId)
+
+    let chatInfo = await db
+      .select({
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        conversationId: conversation.id,
+        lastMessage: conversation.lastMessage,
+      })
+      .from(conversationParticipants)
+      .innerJoin(
+        conversation,
+        eq(conversation.id, conversationParticipants.conversationId)
+      )
+      .innerJoin(user, eq(conversationParticipants.userId, user.id))
+      .where(
+        and(
+        inArray(conversationParticipants.conversationId, converstionIdsArr),
+        // ne(conversationParticipants.userId, id),
+        ne(user.id, id))
+      );
+
+    // userInfo = await Promise.all(
+    //   userInfo.map(async (user) => {
+    //     // Fetch unseen messages for the current user
+    //     const unseenMsgArr = await db
+    //       .select()
+    //       .from(messageStatus)
+    //       .where(and( eq(messageStatus.userId, user.userId), eq(messageStatus.status, 'unseen')));
+
+    //     // Log the unseen messages
+    //     console.log(unseenMsgArr);
+
+    //     // return {
+    //     //   ...user,
+    //     //   unseenMessages: unseenMsgArr.length,
+    //     // };
+    //   })
+    // );
+
+    return res.status(200).json(new ApiResponse(200, "success", chatInfo));
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const checkStatus = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const socket = userToSocket.get(Number(id));
+
+    if (socket) {
+      console.log("User is online:", id);
+      return res
+        .status(200)
+        .json(new ApiResponse(200, "online", { status: "online" }));
+    } else {
+      console.log("User is offline:", id);
+      return res
+        .status(200)
+        .json(new ApiResponse(200, "offline", { status: "offline" }));
+    }
+
+    // Do something with usersPerConversation if needed
+  } catch (error) {
+    console.log(error);
+    throw new ApiError(500, "can not get status", error);
+  }
+};
+
+const updateMsgStatus = async (req, res) => {
+  const { id, msgId } = req.params;
+  await db
+    .update(messageStatus)
+    .set({ status: "seen" })
+    .where(
+      and(eq(messageStatus.userId, id), eq(messageStatus.messageId, msgId))
+    );
+
+  return res.status(200).json(new ApiResponse(200, "all users", users));
+};
+export {
+  register,
+  loginUser,
+  findUsers,
+  getChats,
+  getMessages,
+  checkStatus,
+  updateMsgStatus,
+};

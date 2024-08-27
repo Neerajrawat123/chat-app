@@ -1,28 +1,22 @@
-import { useContext } from "react";
 import Header from "./header";
 import InputBox from "./InputBox";
 import Messages from "./Messages";
-import { friendContext } from "../../context/friend";
 
-export default function MessageBox({messages}) {
-  const {friend} = useContext(friendContext)
+export default function MessageBox() {
 
   return (
-    <div className="w-2/3 flex flex-col h-screen">
+    <div className="w-2/3 flex flex-col h-screen relative overflow-hidden">
       <Header />
      
-      { friend ? (
+      {/* { friend ? ( */}
         <>
-      <Messages messages={messages} />
+      <Messages />
       <InputBox />
       </>
 
 
-      ):
-     ( <div>this is a whatsapp clone
+      
+    
 
-
-    </div>
-  )}
   </div>
 )}

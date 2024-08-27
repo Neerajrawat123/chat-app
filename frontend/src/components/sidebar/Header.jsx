@@ -1,16 +1,13 @@
-import { useContext } from "react";
-import { userContext } from "../../context/userContext";
+import Search from "./Search";
+import TypeMessage from "./TypeMessage";
 
 export default function Header() {
-  const {user} = useContext(userContext)
   return (
-    <div className="h-16 w-1/3 flex fixed bg-secodary px-3 gap-2">
-      <div className="w-1/3 h-full flex items-center">
-        <img src="images/account.svg" className="object-contain h-3/4 bg-inherit" />
+    <div className="flex h-20 flex-col sticky top-0 rounded-lg z-50    gap-2 ">
+      <div className="px-4 py-2">
+        <Search />
       </div>
-      <div>
-        <span className="text-2xl ">{user.name}</span>
-      </div>
+      <TypeMessage />
     </div>
   );
 }

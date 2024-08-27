@@ -1,13 +1,14 @@
 import axios from "axios";
-import { useContext, useState } from "react";
-import { userContext } from "../context/userContext";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUserStore } from "../store/userStore";
 
 export default function Login() {
+  const updateUser = useUserStore((state) => state.updateUser)
+
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('')
-  const {user, setUser} = useContext(userContext)
   const navigate = useNavigate()
   
   const handleLogin = (e) => {
@@ -17,11 +18,9 @@ export default function Login() {
     axios.post('/user/login',{email, password})
     .then((response) => {
       if(response.data.statusCode === 200){
-        console.log('success')
-        setUser(response.data.data.user)
-        navigate('/dashboard')
-        sessionStorage.setItem('access-token', response.data.data.accessToken)
-        sessionStorage.setItem('refresh-token', response.data.data.refreshToken)
+        updateUser(response.data.data.user[0])
+        navigate('/')
+       
 
 
       }
@@ -110,8 +109,8 @@ export default function Login() {
         </div>
 
         <p className="mt-8 text-xs font-light text-center text-gray-700">
-          <a href="#" className="font-medium text-purple-600 hover:underline">
-            Sign up
+          <a href="/register" className="font-medium text-purple-600 hover:underline">
+            Register
           </a>
         </p>
       </div>

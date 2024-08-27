@@ -1,20 +1,19 @@
-import { useContext } from "react";
+import { useUserStore } from "../../store/userStore";
 
-import { userContext } from "../../context/userContext";
 
-const Message = ({ content, writer, unreadMsgs }) => {
-  console.log(unreadMsgs);
-  const { user } = useContext(userContext);
+const Message = ({ content, writer }) => {
+  const {currentUser} = useUserStore()
   return (
     <div
-      className={
-        writer === user._id
-          ? "self-end bg-green-500 rounded-lg"
-          : "self-start bg-blue-600 rounded-lg"
-      }
+    className={`w-2/3  float-right ${writer === currentUser.id ? 'self-end' : "self-start"} float-right `}
+      
+      
     >
-      <div className="w-max px-2 py-1  text-lg border">{content}</div>
-      <span>{unreadMsgs.length}</span>
+      <div className={` px-4 py-3 max-w-max text-xl ${writer=== currentUser.id ? 'float-right bg-[#ef6144] text-white' : "float-left bg-[#f6f6f6]"}  text-lg  rounded-xl `} >
+        {content}
+      
+      </div>
+      {/* <span>{unreadMsgs.length}</span> */}
     </div>
   );
 };

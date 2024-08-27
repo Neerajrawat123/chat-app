@@ -1,38 +1,91 @@
-import { useContext, useState } from "react";
-import { GiPlayButton } from "react-icons/gi";
-import { MdEmojiEmotions } from "react-icons/md";
+import { useEffect, useState } from "react";
+import { PiPaperclip } from "react-icons/pi";
+import { PiPaperPlaneRightBold } from "react-icons/pi";
 import { socket } from "../../pages/Dashboard";
-import { userContext } from "../../context/userContext";
-import { friendContext } from "../../context/friend";
+import { useUserStore } from "../../store/userStore";
+import { useChatStore } from "../../store/chatStore";
 const InputBox = () => {
-  const {user } = useContext(userContext)
-  const { friend } = useContext(friendContext)
-  const [message, setMessage]  = useState('')
+  const [message, setMessage] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const { currentUser } = useUserStore();
+  const { chatId, conId } = useChatStore();
+
+ 
   const sendMessage = async () => {
-    if (message !== '') {
-      socket.emit('send message' , {recieverId:friend._id, senderId: user._id, message: message})
-      setMessage('')
-      
+    if (message !== "") {
+      socket.emit("send message", {
+        recieverId: chatId,
+        senderId: currentUser.id,
+        content: message,
+        conversationId: conId
+      });
+      setMessage("");
     }
-
-
-
-    
-  }
+  };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      sendMessage()
-      
+    if (e.key === "Enter") {
+      sendMessage();
     }
-  }
+  };
 
+  const handleInputChange = (e) => {
+    setMessage(e.target.value);
+    
+  };
+
+  useEffect(() => {
+
+    if(isTyping){
+      socket.emit("typing", { typing: true, id: currentUser.id });
+
+    }else{
+      socket.emit("typing", { typing: false, id: currentUser.id });
+
+    }
+
+    return () => {
+      socket.off("typing");
+    };
+   
+  }, [ currentUser])
+
+  // function handleFocus() {
+  //   socket.emit("typing", { typing: true, id: currentUser.id });
+
+    
+  // }
+
+
+  // function handleBlur() {
+    
+  // }
   
+
   return (
-    <div className="h-12 w- p-2 bg-gray-200 flex text-3xl flex-1 fixed bottom-0 gap-2">
-      <MdEmojiEmotions />
-      <input type="text" value={message} onChange={(e) => setMessage(e.target.value)} onKeyDown={handleKeyDown} className=" px-2 text-xl w-4/5 rounded-lg" placeholder="enter the message"/>
-      <GiPlayButton onClick={sendMessage} />
+    <div className="h-12 w-full px-12 absolute  bottom-6 ">
+      <div className="flex text-3xl flex-1  gap-2 bg-[#f6f6f6] rounded-lg items-center">
+        <input
+          type="text"
+          value={message}
+          onKeyDown={(e) => handleKeyDown(e)}
+          onFocus={() => setIsTyping(true)}
+          onBlur={() => setIsTyping(false)}
+          onChange={(e) => handleInputChange(e)}
+          className=" px-4 py-3 text-lg focus:outline-none font-medium w-[87%] bg-transparent rounded-lg"
+          placeholder="Type your message here"
+        />
+
+        <div className="flex gap-7 items-center py-1 ">
+          <PiPaperclip size={25} fill="#ef6144" />
+          <PiPaperPlaneRightBold
+            onClick={() => sendMessage()}
+            size={28}
+            fill="#ef6144"
+            className="bg-orange-100 cursor-pointer p-1"
+          />
+        </div>
+      </div>
     </div>
   );
 };

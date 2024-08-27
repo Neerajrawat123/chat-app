@@ -104,17 +104,17 @@ const Messages = () => {
   return (
     <div className="scroll-smooth overflow-scroll overflow-x-hidden  mb-20  mt-24">
       <div className="px-8 py-2 flex flex-col-reverse gap-2 min-h-[80vh] items-baseline ">
-        <div ref={lastDivRef}></div>
       {
-          isTyping && <TypingAnimation />
-        }
+        isTyping && <TypingAnimation />
+      }
         {messages.map((message) => (
           <Message
-            key={message.date}
-            content={message.content}
-            writer={message.senderId}
+          key={message.date}
+          content={message.content}
+          writer={message.senderId}
           />
         ))}
+        <div ref={lastDivRef}></div>
         
 
       </div>

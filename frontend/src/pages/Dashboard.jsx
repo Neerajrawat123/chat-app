@@ -1,14 +1,13 @@
-import { useState, useEffect, useContext } from "react";
+import { useEffect } from "react";
 import MessageBox from "../components/messagesBox/index.jsx";
 import Sidebar from "../components/sidebar";
 import { ImArrowLeft } from "react-icons/im";
-import { io } from "socket.io-client";
 import { useUserStore } from "../store/userStore.js";
 import { useChatStore } from "../store/chatStore.js";
+import {connectSocket} from '../lib/connectSocket.js'
+import { socket } from "../lib/socket.js";
 
-export const socket = io("http://localhost:4000",{
-  autoConnect: false
-});
+
 
 
 
@@ -16,9 +15,10 @@ export const socket = io("http://localhost:4000",{
 export default function Dashboard() {
   
   const user = useUserStore((state) => state.currentUser)
-  const { chatId, chatUsers, addChatUsers,   updateLastMessage  } = useChatStore()
+  const { chatId,  } = useChatStore()
   if(user){
-    socket.connect()
+
+    connectSocket()
   }
 
  

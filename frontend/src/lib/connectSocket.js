@@ -1,6 +1,6 @@
-
+import {socket} from './socket.js'
 export function connectSocket() {
-  const socket = io("http://localhost:4000");
+  socket.connect()
 
   socket.on("connect", () => {
     console.log('socket is connected to ', socket.id);

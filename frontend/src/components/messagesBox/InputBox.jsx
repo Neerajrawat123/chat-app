@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { PiPaperclip } from "react-icons/pi";
 import { PiPaperPlaneRightBold } from "react-icons/pi";
-import { socket } from "../../pages/Dashboard";
 import { useUserStore } from "../../store/userStore";
 import { useChatStore } from "../../store/chatStore";
+import { socket } from "../../lib/socket";
 const InputBox = () => {
   const [message, setMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -35,6 +35,7 @@ const InputBox = () => {
   };
 
   useEffect(() => {
+    console.log('typing change')
 
     if(isTyping){
       socket.emit("typing", { typing: true, id: currentUser.id });
@@ -48,7 +49,7 @@ const InputBox = () => {
       socket.off("typing");
     };
    
-  }, [ currentUser])
+  }, [ currentUser, chatId, isTyping])
 
   // function handleFocus() {
   //   socket.emit("typing", { typing: true, id: currentUser.id });

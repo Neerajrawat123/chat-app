@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import {  useRef, useState } from "react";
 import {  FaSearch } from "react-icons/fa";
 import { IoMdArrowRoundBack } from "react-icons/io";
 import { debounce } from 'lodash';
 import axios from "axios";
 import { useUserStore } from "../../store/userStore";
-import { socket } from "../../pages/Dashboard";
 import { useChatStore } from "../../store/chatStore";
+import { socket } from "../../lib/socket";
 
 export default function Search() {
   const inputRef = useRef(null);

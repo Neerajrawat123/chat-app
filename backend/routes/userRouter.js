@@ -20,7 +20,7 @@ router.get("/chats/:id", asyncHandler(getChats));
 // router.post("/start-conversation", asyncHandler(startConversation));
 router.get("/getMessages/:recieverId/:senderId", asyncHandler(getMessages));
 router.get("/isOnline/:id", asyncHandler(checkStatus));
-router.get("/chat/seen/:id", asyncHandler(updateMsgStatus));
+// router.get("/chat/seen/:id", asyncHandler(updateMsgStatus));
 
 
 

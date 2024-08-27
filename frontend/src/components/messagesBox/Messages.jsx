@@ -2,9 +2,9 @@ import Message from "./Message";
 import { useEffect, useRef, useState } from "react";
 import { useChatStore } from "../../store/chatStore";
 import axios from "axios";
-import { socket } from "../../pages/Dashboard";
 import TypingAnimation from "../TypingAnimation";
 import { useUserStore } from "../../store/userStore";
+import { socket } from "../../lib/socket";
 
 const Messages = () => {
   const lastDivRef = useRef(null);
@@ -16,7 +16,7 @@ const Messages = () => {
 
   useEffect(() => {
     const typingHandler = (data) => {
-      console.log('typing', data)
+      console.log('typing-data', data)
       if (chatId === data.id && data.typing === true) {
         setIsTyping(true);
       }else{
@@ -24,12 +24,12 @@ const Messages = () => {
       }
 
     }
-    socket.on("typing", typingHandler);
+    socket.on("typing-data", typingHandler);
 
     return () => {
-      socket.off("typing", typingHandler);
+      socket.off("typing-data", typingHandler);
     };
-  }, [ socket]);
+  }, [  chatId, ]);
 
   useEffect(() => {
     const messageReceivedHandler = (msg) => {

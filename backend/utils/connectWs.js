@@ -155,7 +155,7 @@ export function connectWs() {
 
       socket.on("typing", (data) => {
         console.log("typing", data);
-        socket.broadcast.except(userToSocket.get(data.id)).emit("typing", data);
+        socket.broadcast.emit("typing-data", data);
       });
       socket.on("send message", async (data) => {
         const { recieverId, senderId, content } = data;

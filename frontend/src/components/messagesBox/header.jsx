@@ -1,12 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, } from "react";
 import { subscribe } from "../../lib/onlineIndicator";
 import { useChatStore } from "../../store/chatStore";
-import { useUserStore } from "../../store/userStore";
-import { socket } from "../../pages/Dashboard";
 
 export default function Header() {
   const {user, chatId, OnlineStatus} = useChatStore()
-  const { currentUser} = useUserStore()
 
   
 

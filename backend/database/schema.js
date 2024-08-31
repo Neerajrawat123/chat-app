@@ -1,3 +1,4 @@
+import { int } from "drizzle-orm/mysql-core";
 import { serial, text, timestamp, pgTable, integer, varchar, primaryKey, pgEnum } from "drizzle-orm/pg-core";
 
 // Users table
@@ -16,7 +17,7 @@ export const user = pgTable("users", {
 // Conversations table
 export const conversation = pgTable("conversations", {
     id: serial("id"), 
-    lastMessage: text("lastmessage"),
+    lastMessage: integer("lastmessage").references(() => message.id),
     createdAt: timestamp("created_at").defaultNow(),  // Automatically set timestamp
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),  // Auto-update on record update
 });

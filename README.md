@@ -1,8 +1,7 @@
 # Chat App
 This is a full-stack chat application built with Node.js and Drizzle ORM on the backend and React on the frontend. The application supports real-time messaging, message status tracking (seen/unseen), and user authentication.
 
-![image of chat app](https://drive.google.com/file/d/1BYLV3hEPWIXzRc7nPzqeGJpzLh2qzj-n/view?usp=sharing)
-
+[![chat app image](https://i.postimg.cc/yY72VjHQ/Screenshot-27-8-2024-10122-localhost.jpg)](https://postimg.cc/vDS0hWDf)
 
 ## Features
 Real-time Messaging: Send and receive messages in real-time.

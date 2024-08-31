@@ -1,4 +1,18 @@
-import { and, arrayContains, asc, desc, eq, exists, ilike, inArray, like, ne, or, sql } from "drizzle-orm";
+import {
+  and,
+  arrayContains,
+  asc,
+  count,
+  desc,
+  eq,
+  exists,
+  ilike,
+  inArray,
+  like,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
 import { db } from "../database/connect.js";
 import {
   conversation,
@@ -69,6 +83,7 @@ async function register(req, res) {
 
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
+  console.log(email, password);
 
   if (!email) {
     throw new ApiError(400, "username or email is required");
@@ -82,28 +97,15 @@ const loginUser = async (req, res) => {
 
   console.log(userInfo);
 
-  // const isPasswordValid = await bcryptjs.compare(password, user.password);
   if (userInfo[0].password !== password) {
     throw new ApiError(401, "Invalid user credentials");
   }
-
-  // if (!isPasswordValid) {
-  //   throw new ApiError(401, "Invalid user credentials");
-  // }
-
-  // const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
-  //   user._id,
-  // );
 
   const loggedInUser = await db
     .select({ email: user.email, name: user.name, id: user.id })
     .from(user)
     .where(eq(user.email, email));
 
-  // const options = {
-  //   httpOnly: true,
-  //   secure: true,
-  // };
   return res.status(200).json(
     new ApiResponse(200, "User logged In Successfully", {
       user: loggedInUser,
@@ -126,7 +128,7 @@ const findUsers = async (req, res) => {
 
 const getMessages = async (req, res) => {
   const { recieverId, senderId } = req.params;
-  console.log('get messages',senderId, recieverId)
+  console.log("get messages", senderId, recieverId);
 
   try {
     let messages = await db
@@ -156,15 +158,31 @@ const getMessages = async (req, res) => {
 
 const getChats = async (req, res) => {
   const { id } = req.params;
-  console.log(id)
+  console.log(id);
 
   try {
     const chatIds = await db
-      .select({conversationId: conversationParticipants.conversationId } )
+      .select({ conversationId: conversationParticipants.conversationId })
       .from(conversationParticipants)
       .where(eq(conversationParticipants.userId, id));
 
-      const converstionIdsArr = chatIds.map((ids) => ids.conversationId)
+    const converstionIdsArr = chatIds.map((ids) => ids.conversationId);
+    let sq = db
+      .select({ unseenMsg: count().as('unseenMsg'), conversationId: message.conversationId })
+      .from(message)
+      .innerJoin(
+        messageStatus,
+        eq(message.id, messageStatus.messageId),
+        eq(messageStatus.status, "unseen")
+      )
+      .where(
+        and(
+          inArray(message.conversationId, converstionIdsArr),
+          and(eq(messageStatus.userId, id))
+        )
+      )
+      .groupBy(message.conversationId)
+      .as("sq");
 
     let chatInfo = await db
       .select({
@@ -172,7 +190,9 @@ const getChats = async (req, res) => {
         name: user.name,
         email: user.email,
         conversationId: conversation.id,
-        lastMessage: conversation.lastMessage,
+        lastMessage: message.content,
+        unseenMessages: sq.unseenMsg,
+        lastMessageSender: message.senderId
       })
       .from(conversationParticipants)
       .innerJoin(
@@ -180,30 +200,17 @@ const getChats = async (req, res) => {
         eq(conversation.id, conversationParticipants.conversationId)
       )
       .innerJoin(user, eq(conversationParticipants.userId, user.id))
+      .innerJoin(message, eq(conversation.lastMessage, message.id))
+      .leftJoin(
+        sq,
+        eq(conversationParticipants.conversationId, sq.conversationId)
+      )
       .where(
         and(
-        inArray(conversationParticipants.conversationId, converstionIdsArr),
-        // ne(conversationParticipants.userId, id),
-        ne(user.id, id))
+          inArray(conversationParticipants.conversationId, converstionIdsArr),
+          ne(user.id, id)
+        )
       );
-
-    // userInfo = await Promise.all(
-    //   userInfo.map(async (user) => {
-    //     // Fetch unseen messages for the current user
-    //     const unseenMsgArr = await db
-    //       .select()
-    //       .from(messageStatus)
-    //       .where(and( eq(messageStatus.userId, user.userId), eq(messageStatus.status, 'unseen')));
-
-    //     // Log the unseen messages
-    //     console.log(unseenMsgArr);
-
-    //     // return {
-    //     //   ...user,
-    //     //   unseenMessages: unseenMsgArr.length,
-    //     // };
-    //   })
-    // );
 
     return res.status(200).json(new ApiResponse(200, "success", chatInfo));
   } catch (error) {

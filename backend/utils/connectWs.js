@@ -75,13 +75,13 @@ export function connectWs() {
           await db.insert(messageStatus).values({
             messageId: msgId,
             userId: recieverId,
-          });
+          }).returning();
 
           // fill message status table
 
           await db
             .update(conversation)
-            .set({ lastMessage: "hii" })
+            .set({ lastMessage: msgId })
             .where(eq(conversation.id, conversationId));
 
           const recieverData = await db
@@ -91,7 +91,7 @@ export function connectWs() {
               email: user.email,
               msgId: message.id,
               conversationId: message.conversationId,
-              lastMessage: conversation.lastMessage,
+              lastMessage: message.content,
             })
             .from(message)
             .innerJoin(user, eq(message.receiverId, user.id))
@@ -110,7 +110,7 @@ export function connectWs() {
               email: user.email,
               msgId: message.id,
               conversationId: message.conversationId,
-              lastMessage: conversation.lastMessage,
+              lastMessage: message.content,
             })
             .from(message)
             .innerJoin(user, eq(message.senderId, user.id))
@@ -194,9 +194,21 @@ export function connectWs() {
           })
           .returning();
 
+          
+          const msgId = createdMessage[0].id;
+
+          await db.insert(messageStatus).values({
+            messageId: msgId,
+            userId: recieverId,
+          });
+
+
+          
+
         await db
           .update(conversation)
-          .set({ lastMessage: content })
+          .set({ lastMessage: msgId })
+
           .where(eq(conversation.id, conversationId[0].conversationId));
 
           console.log(createdMessage)
